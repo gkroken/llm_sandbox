@@ -210,23 +210,109 @@ print(response.choices[0].message.content)
 
 ---
 
+## Continue.dev (VS Code Copilot)
+
+### Installation
+Install the **Continue** extension from the VS Code marketplace (by Continue.dev).
+
+### Config file location
+`Ctrl+Shift+P` → "Continue: Open config.yaml"
+
+### Working config (`~/.continue/config.yaml`)
+```yaml
+name: Local LLM Sandbox
+version: 0.0.1
+schema: v1
+
+models:
+  - name: Local Chat
+    provider: openai
+    model: chat
+    apiBase: http://localhost:4000/v1
+    apiKey: sk-local-master-1234
+    useLegacyCompletionsEndpoint: false
+
+tabAutocompleteModel:
+  name: Local Autocomplete
+  provider: openai
+  model: code-assistant
+  apiBase: http://localhost:4000/v1
+  apiKey: sk-local-master-1234
+  useLegacyCompletionsEndpoint: false
+```
+
+`useLegacyCompletionsEndpoint: false` is required — without it Continue sends requests
+to `/v1/completions` with an empty prompt, which vLLM rejects with a 400 error.
+
+### What works at 7B
+
+| Feature | Shortcut | Status | Notes |
+|---|---|---|---|
+| Chat about code | `Ctrl+L` | ✅ Works well | Add file context with "Active file" toggle |
+| Inline edit | `Ctrl+I` | ✅ Works well | Select code first, then describe the change |
+| Autocomplete | automatic | ✅ Works | ~1-2s delay |
+| Agent mode | sidebar | ⚠️ Unreliable | 7B models struggle with multi-step tool use |
+
+**Recommended workflow for 7B:** use Chat (`Ctrl+L`) and inline edit (`Ctrl+I`).
+Agent mode is worth revisiting on the production box with a 32B+ model.
+
+---
+
+## Context Window
+
+vLLM reports **17,344 tokens** of KV cache available on the 3070 Ti with current settings.
+`--max-model-len` is set to **8192** — well within available cache.
+
+To check available KV cache after startup:
+```bash
+docker compose logs vllm | grep -E "KV cache|max_model_len"
+```
+
+The model originally ran at `--max-model-len 4096` which caused Continue to hit the
+context limit (system prompt + file context + chat history easily exceeds 4096).
+Increasing to 8192 fixed the connection errors without any VRAM issues.
+
+Do not set `--max-model-len` above 8192 on this hardware without checking KV cache
+headroom first.
+
+---
+
 ## Known Issues & Fixes
 
 ### VRAM constraint
-Windows uses ~1.1GB of the 3070 Ti's 8GB VRAM for the display. Effective available VRAM is ~6.9GB. The vLLM config uses `--gpu-memory-utilization 0.85` and `--max-model-len 4096` to stay within limits. Do not increase utilization above 0.85.
+Windows uses ~1.1GB of the 3070 Ti's 8GB VRAM for the display. Effective available VRAM
+is ~6.9GB. The vLLM config uses `--gpu-memory-utilization 0.85` and `--max-model-len 8192`.
+Do not increase utilization above 0.85.
 
 ### LITELLM_MASTER_KEY warning
-Docker compose shows `LITELLM_MASTER_KEY variable is not set` on startup — this is a cosmetic warning. The key is hardcoded directly in `docker-compose.yml` and works correctly. Safe to ignore.
+Docker compose shows `LITELLM_MASTER_KEY variable is not set` on startup — cosmetic warning.
+The key is hardcoded directly in `docker-compose.yml`. Safe to ignore.
 
 ### `version` obsolete warning
-`docker-compose.yml: the attribute version is obsolete` — also cosmetic. Remove the `version: "3.8"` line from `docker-compose.yml` to silence it.
+`docker-compose.yml: the attribute version is obsolete` — cosmetic. Remove the
+`version: "3.8"` line from `docker-compose.yml` to silence it.
 
 ### Model not found (404)
-If LiteLLM returns model not found, check that the model name in `litellm_config.yaml` matches exactly what vLLM reports:
+If LiteLLM returns model not found, check that the model name in `litellm_config.yaml`
+matches exactly what vLLM reports:
 ```bash
 curl http://localhost:8001/v1/models
 ```
 The model field in `litellm_config.yaml` must be `openai/` + the exact ID from that response.
+
+### Continue "Connection error" / context window error
+Caused by `--max-model-len` being too small for Continue's combined prompt (system prompt +
+file context + chat history). Fix: increase `--max-model-len` to 8192 in `docker-compose.yml`
+and restart vLLM.
+
+### Continue empty prompt error (`prompt: ''`)
+Caused by Continue using the legacy `/v1/completions` endpoint. Fix: add
+`useLegacyCompletionsEndpoint: false` to both model entries in `~/.continue/config.yaml`.
+
+### context_window_fallback_dict does nothing useful here
+Setting `context_window_fallback_dict: {"chat": "chat"}` in `litellm_config.yaml` is a
+no-op — it's meant to fall back to a *different* smaller model, not the same one. The real
+fix is increasing `--max-model-len`. Remove this line if present.
 
 ---
 
@@ -235,14 +321,16 @@ The model field in `litellm_config.yaml` must be `openai/` + the exact ID from t
 ```yaml
 --model ${ACTIVE_MODEL}           # model to load from HuggingFace cache
 --dtype half                      # FP16 precision
---quantization awq_marlin         # AWQ quantization with Marlin kernel (faster than plain awq)
+--quantization awq_marlin         # AWQ with Marlin kernel (faster than plain awq)
 --gpu-memory-utilization 0.85     # use 85% of available VRAM
---max-model-len 4096              # max context window (limited by VRAM)
+--max-model-len 8192              # max context window
 --max-num-seqs 4                  # max concurrent requests
 --enforce-eager                   # disable CUDA graph compilation (saves ~0.38GB VRAM)
 ```
 
-On the production box (DGX Spark, 128GB unified memory) you'd remove `--enforce-eager`, increase `--max-model-len` to 32768+, increase `--max-num-seqs`, and drop `--quantization awq_marlin` for full precision models.
+On the production box (DGX Spark, 128GB unified memory) you'd remove `--enforce-eager`,
+increase `--max-model-len` to 32768+, increase `--max-num-seqs`, and drop
+`--quantization awq_marlin` for full precision models.
 
 ---
 
@@ -250,7 +338,7 @@ On the production box (DGX Spark, 128GB unified memory) you'd remove `--enforce-
 
 The entire stack is identical. Only three things change:
 
-1. **Remove `--enforce-eager`** and `--quantization awq_marlin` from vLLM command (run full precision)
+1. **Remove `--enforce-eager`** and `--quantization awq_marlin` from vLLM command
 2. **Run multiple vLLM instances** on different ports (one per model)
 3. **Update `api_base` URLs** in `litellm_config.yaml` to point at the production box IP
 
@@ -269,14 +357,13 @@ The entire stack is identical. Only three things change:
     api_key: dummy
 ```
 
-Continue.dev config: change `apiBase` from `http://localhost:4000/v1` to `http://production-box-ip:4000/v1`.
+Continue.dev config: change `apiBase` from `http://localhost:4000/v1` to
+`http://production-box-ip:4000/v1`.
 
 ---
 
 ## Next Steps (Not Yet Done)
 
-- [ ] Set up Continue.dev in VS Code for copilot-style code completion
-- [ ] Create a HuggingFace token in `.env` and test model switching
 - [ ] Write and test the PDF pipeline script (ACOS → multimodal → JSON → DB)
 - [ ] Generate developer virtual keys via LiteLLM admin UI
-- [ ] Set up `.wslconfig` to tune WSL2 memory allocation
+- [ ] Test model switching (`switch-model.sh`) end to end
