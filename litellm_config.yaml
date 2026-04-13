@@ -13,7 +13,7 @@ model_list:
 
   - model_name: pdf-vision
     litellm_params:
-      model: openai/Qwen/Qwen2.5-Coder-7B-Instruct-AWQ
+      model: openai/Qwen/Qwen2-VL-2B-Instruct
       api_base: http://vllm:8000/v1
       api_key: dummy
 

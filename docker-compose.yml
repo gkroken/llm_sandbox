@@ -26,11 +26,11 @@ services:
     command: >
       --model ${ACTIVE_MODEL}
       --dtype half
-      --quantization awq_marlin
       --gpu-memory-utilization 0.85
       --max-model-len 8192
       --max-num-seqs 4
       --enforce-eager
+      ${ACTIVE_QUANT}
     deploy:
       resources:
         reservations:

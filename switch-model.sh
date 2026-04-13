@@ -2,9 +2,9 @@
 set -e
 
 MODELS=(
-  "code:Qwen/Qwen2.5-Coder-7B-Instruct-AWQ"
-  "chat:Qwen/Qwen2.5-7B-Instruct-AWQ"
-  "vision:Qwen/Qwen2-VL-2B-Instruct"
+  "code:Qwen/Qwen2.5-Coder-7B-Instruct-AWQ:--quantization awq_marlin"
+  "chat:Qwen/Qwen2.5-7B-Instruct-AWQ:--quantization awq_marlin"
+  "vision:Qwen/Qwen2-VL-2B-Instruct:"
 )
 
 if [ -z "$1" ]; then
@@ -12,15 +12,24 @@ if [ -z "$1" ]; then
   echo ""
   echo "Available models:"
   for m in "${MODELS[@]}"; do
-    echo "  ${m%%:*}  →  ${m##*:}"
+    key="${m%%:*}"
+    rest="${m#*:}"
+    val="${rest%%:*}"
+    echo "  $key  →  $val"
   done
   exit 1
 fi
 
 TARGET_MODEL=""
+TARGET_QUANT=""
 for m in "${MODELS[@]}"; do
-  if [ "${m%%:*}" = "$1" ]; then
-    TARGET_MODEL="${m##*:}"
+  key="${m%%:*}"
+  rest="${m#*:}"
+  val="${rest%%:*}"
+  quant="${rest#*:}"
+  if [ "$key" = "$1" ]; then
+    TARGET_MODEL="$val"
+    TARGET_QUANT="$quant"
     break
   fi
 done
@@ -32,6 +41,8 @@ fi
 
 echo "→ Switching to: $TARGET_MODEL"
 sed -i "s|^ACTIVE_MODEL=.*|ACTIVE_MODEL=$TARGET_MODEL|" .env
+sed -i "s|^ACTIVE_QUANT=.*|ACTIVE_QUANT=$TARGET_QUANT|" .env
+
 docker compose stop vllm
 docker compose up -d vllm
 echo "✓ vLLM restarting with $TARGET_MODEL"
