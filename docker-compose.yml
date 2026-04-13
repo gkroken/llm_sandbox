@@ -1,0 +1,80 @@
+version: "3.8"
+
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: litellm-postgres
+    environment:
+      - POSTGRES_USER=litellm
+      - POSTGRES_PASSWORD=litellm
+      - POSTGRES_DB=litellm
+    volumes:
+      - litellm-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: vllm
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - HF_TOKEN=${HF_TOKEN}
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
+    ports:
+      - "8001:8000"
+    command: >
+      --model ${ACTIVE_MODEL}
+      --dtype half
+      --quantization awq_marlin
+      --gpu-memory-utilization 0.85
+      --max-model-len 4096
+      --max-num-seqs 4
+      --enforce-eager
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    depends_on:
+      vllm:
+        condition: service_healthy
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+    ports:
+      - "4000:4000"
+    command: --config /app/config.yaml --port 4000 --detailed_debug
+    environment:
+      - LITELLM_MASTER_KEY=sk-local-master-1234
+      - DATABASE_URL=postgresql://litellm:litellm@postgres:5432/litellm
+    restart: unless-stopped
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    depends_on:
+      - litellm
+    ports:
+      - "3000:8080"
+    environment:
+      - OPENAI_API_BASE_URL=http://litellm:4000/v1
+      - OPENAI_API_KEY=${LITELLM_MASTER_KEY}
+    volumes:
+      - open-webui-data:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  open-webui-data:
+  litellm-postgres-data:

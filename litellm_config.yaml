@@ -1,0 +1,25 @@
+model_list:
+  - model_name: code-assistant
+    litellm_params:
+      model: openai/Qwen/Qwen2.5-Coder-7B-Instruct-AWQ
+      api_base: http://vllm:8000/v1
+      api_key: dummy
+
+  - model_name: chat
+    litellm_params:
+      model: openai/Qwen/Qwen2.5-Coder-7B-Instruct-AWQ
+      api_base: http://vllm:8000/v1
+      api_key: dummy
+
+  - model_name: pdf-vision
+    litellm_params:
+      model: openai/Qwen/Qwen2.5-Coder-7B-Instruct-AWQ
+      api_base: http://vllm:8000/v1
+      api_key: dummy
+
+litellm_settings:
+  set_verbose: true
+  drop_params: true
+
+general_settings:
+  master_key: sk-local-master-1234
