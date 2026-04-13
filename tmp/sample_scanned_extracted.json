@@ -1,0 +1,173 @@
+[
+  {
+    "page": 1,
+    "data": {
+      "document_type": "Letter",
+      "date": "November 10, 2015",
+      "sender": {
+        "name": "Peter Lyskowski",
+        "organization": "Missouri Department of Health and Senior Services",
+        "address": "P.O. Box 570, Jefferson City, MO 65102-0570"
+      },
+      "recipient": "Missouri Public Water Systems",
+      "subject": "Missouri Public Water Systems",
+      "key_points": [
+        "Missouri State Public Health Laboratory (MSPHL) is in the process of implementing a new Laboratory Information Management System (LIMS) in its drinking water bacteriology testing laboratory."
+      ],
+      "contact_info": {
+        "phone": "573-751-6400",
+        "fax": "573-751-6010",
+        "email": "RELAY MISSOURI for Hearing and Speech Impaired 1-800-735-2966 VOICE 1-800-735-2466"
+      }
+    }
+  },
+  {
+    "page": 2,
+    "data": {
+      "document_type": "Letter",
+      "date": "December 16, 2015",
+      "sender": {
+        "name": "Missouri State Public Health Laboratory",
+        "organization": "Missouri State Public Health Laboratory",
+        "address": "Missouri State Public Health Laboratory"
+      },
+      "recipient": "Contract operators",
+      "subject": "Sample Collection Instructions and Web Portal for Results Reports",
+      "key_points": [
+        "The MSPHL will begin shipping the new forms to public water systems in late November or early December.",
+        "Please begin using the new forms December 16, 2015.",
+        "Discard all the old forms (cards) at that time."
+      ],
+      "contact_info": {
+        "phone": "573-751-3334",
+        "fax": "573-751-3334",
+        "email": "Shondra.Johnson@health.mo.gov"
+      }
+    }
+  },
+  {
+    "page": 3,
+    "data": {
+      "document_type": "Letter",
+      "date": "null",
+      "sender": {
+        "name": "Patrick R. Shannon",
+        "organization": "Missouri Department of Health and Senior Services",
+        "address": "State Public Health Laboratory, 101 North Chestnut St, P.O. Box 570, Jefferson City, MO 65102"
+      },
+      "recipient": "null",
+      "subject": "Implementation of Changes",
+      "key_points": [
+        "Thank you for your patience and understanding as we implement these changes."
+      ],
+      "contact_info": {
+        "phone": "573-751-3334",
+        "fax": "null",
+        "email": "Pat.Shannon@health.mo.gov"
+      }
+    }
+  },
+  {
+    "page": 4,
+    "data": {
+      "document_type": "Environmental Sample Collection Form",
+      "date": "2015-11-06",
+      "sender": {
+        "name": "Missouri Department of Health & Senior Services",
+        "organization": "Missouri Department of Health & Senior Services",
+        "address": "101 N. Chestnut, PO Box 570, Jefferson City, MO 65102"
+      },
+      "recipient": "Missouri Department of Natural Resources",
+      "subject": "Public Drinking Water Bacterial Analysis Request",
+      "key_points": [
+        "Total Coliform Bacteria and E. coli (Present/Absent Test)"
+      ],
+      "contact_info": {
+        "phone": "573-751-5331",
+        "fax": "573-751-3334",
+        "email": "publichealth@mo.gov"
+      }
+    }
+  },
+  {
+    "page": 5,
+    "data": {
+      "document_type": "Sample Collection Instructions",
+      "date": "10-2015",
+      "sender": {
+        "name": "Missouri Department of Health and Senior Services",
+        "organization": "Missouri Department of Natural Resources",
+        "address": "State Public Health Laboratory, Environmental Bacteriology Unit, 101 North Chestnut St., P.O. Box 570, Jefferson City, MO 65102"
+      },
+      "recipient": "Missouri Department of Health and Senior Services",
+      "subject": "Sample Collection Instructions",
+      "key_points": [
+        "Sample Collection Instructions",
+        "Public Drinking Water for Coliform Bacteria Analysis",
+        "Missouri Department of Natural Resources",
+        "Sample Containers",
+        "Shrink Wrap Seal",
+        "Two Fill Lines",
+        "No Paper Label"
+      ],
+      "contact_info": {
+        "phone": "573-751-3334",
+        "fax": "573-522-4032",
+        "email": "labweb1@health.mo.gov",
+        "website": "www.health.mo.gov/Lab"
+      }
+    }
+  },
+  {
+    "page": 6,
+    "data": {
+      "document_type": "Bacteriological Sample Collection Procedures",
+      "date": "Page 2 of 4",
+      "sender": {
+        "name": "Missouri Department of Natural Resources (MDNR)",
+        "organization": "Missouri Department of Natural Resources (MDNR)",
+        "address": "Missouri Department of Natural Resources (MDNR)"
+      },
+      "recipient": "Missouri Department of Health and Senior Services (DHSS)",
+      "subject": "Bacteriological Sample Collection Procedures",
+      "key_points": [
+        "Open the cold water tap for about 3 minutes before collecting the sample.",
+        "Flame-sterilize the tap and/or chemically disinfect the tap.",
+        "Flush the tap for an additional 3 minutes with cold water, and then reduce to a gentle flow to about the width of a pencil.",
+        "Remove the plastic shrink wrap seal by pulling down on the red strip and peeling the shrink wrap from both the cap and bottle.",
+        "Grasp cap along top edge and remove carefully. Do not touch the inside with your fingers. Hold the bottle in one hand and the cap in the other. Do not lay the cap down or put it in a pocket!"
+      ],
+      "contact_info": {
+        "phone": "string or null",
+        "fax": "string or null",
+        "email": "string or null"
+      }
+    }
+  },
+  {
+    "page": 7,
+    "error": "JSON parse failed"
+  },
+  {
+    "page": 8,
+    "data": {
+      "document_type": "Shipping Instructions",
+      "date": null,
+      "sender": {
+        "name": null,
+        "organization": null,
+        "address": null
+      },
+      "recipient": null,
+      "subject": null,
+      "key_points": [
+        "Per U.S. Environmental Protection Agency requirements, public water samples must be received by the laboratory and tested within 30 hours of the date and time of collection. The MSPHL and MDNR recommend you use the free Department of Health and Senior Services (DHSS) contract courier for overnight delivery to the MSPHL. This courier picks up at most local public health agency offices and hospitals (Note: Not all hospitals will accept water samples for courier pick up). For sample drop off locations and times, please go to http://www.health.mo.gov/lab/courierservices.php and click on the interactive map or the listing of drop off locations by county; or you may call the MSPHL courier liaison at (573) 751-4830, or the MDNR Public Drinking Water Branch (PDWB) at (573) 526-1124."
+      ],
+      "contact_info": {
+        "phone": null,
+        "fax": null,
+        "email": null
+      }
+    }
+  }
+]
