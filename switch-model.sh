@@ -5,6 +5,7 @@ MODELS=(
   "code:Qwen/Qwen2.5-Coder-7B-Instruct-AWQ:--quantization awq_marlin"
   "chat:Qwen/Qwen2.5-7B-Instruct-AWQ:--quantization awq_marlin"
   "vision:Qwen/Qwen2-VL-2B-Instruct:"
+  "gemma4:google/gemma-4-E4B-it:"
 )
 
 if [ -z "$1" ]; then

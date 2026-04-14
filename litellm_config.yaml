@@ -17,6 +17,12 @@ model_list:
       api_base: http://vllm:8000/v1
       api_key: dummy
 
+  - model_name: gemma4
+    litellm_params:
+      model: openai/google/gemma-4-E2B-it
+      api_base: http://vllm:8000/v1
+      api_key: dummy
+
 litellm_settings:
   set_verbose: true
   drop_params: true

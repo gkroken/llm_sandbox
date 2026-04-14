@@ -13,7 +13,7 @@ services:
       - litellm-postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
   vllm:
-    image: vllm/vllm-openai:latest
+    image: vllm/vllm-openai:gemma4
     container_name: vllm
     runtime: nvidia
     environment:
@@ -30,6 +30,9 @@ services:
       --max-model-len 8192
       --max-num-seqs 4
       --enforce-eager
+      --enable-auto-tool-choice
+      --tool-call-parser gemma4
+      --reasoning-parser gemma4
       ${ACTIVE_QUANT}
     deploy:
       resources:
