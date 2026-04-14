@@ -135,6 +135,7 @@ docker compose ps
 ./switch-model.sh code      # Qwen2.5-Coder-7B-AWQ  — copilot + chat
 ./switch-model.sh chat      # Qwen2.5-7B-AWQ         — general chat
 ./switch-model.sh vision    # Qwen2-VL-2B            — PDF pipeline
+./switch-model.sh gemma4    # Gemma 4 E4B            — testing branch only
 
 # Test API
 curl http://localhost:4000/v1/chat/completions \
@@ -167,6 +168,7 @@ uv run --with pymupdf --with openai python pdf_pipeline.py your_file.pdf
 | code-assistant | Qwen/Qwen2.5-Coder-7B-Instruct-AWQ | ~5.5GB | awq_marlin | Copilot + chat |
 | chat | Qwen/Qwen2.5-7B-Instruct-AWQ | ~5.5GB | awq_marlin | General chat |
 | pdf-vision | Qwen/Qwen2-VL-2B-Instruct | ~3.5GB | none (FP16) | Document extraction |
+| gemma4 | google/gemma-4-E4B-it | ~5GB | none (FP16) | Testing branch — too slow on 3070 Ti |
 
 Only one model runs at a time on 8GB VRAM. On the production box all run simultaneously.
 
@@ -214,11 +216,15 @@ tabAutocompleteModel:
 ```yaml
 --model ${ACTIVE_MODEL}           # model ID from HuggingFace
 --dtype half                      # FP16 (bfloat16 limited on 3070 Ti)
---quantization ${ACTIVE_QUANT}    # injected by switch-model.sh, empty for vision model
+--quantization ${ACTIVE_QUANT}    # injected by switch-model.sh, empty for non-AWQ models
 --gpu-memory-utilization 0.85     # 85% of available VRAM (Windows display eats ~1.1GB)
 --max-model-len 8192              # max context (17,344 KV cache tokens available)
 --max-num-seqs 4                  # max concurrent requests
 --enforce-eager                   # disable CUDA graphs, saves ~0.38GB VRAM
+# Gemma 4 specific (gemma4-testing branch only):
+--enable-auto-tool-choice         # required for agent/tool use
+--tool-call-parser gemma4         # Gemma 4 tool call format
+--reasoning-parser gemma4         # Gemma 4 reasoning/thinking mode
 ```
 
 On the production box: remove `--enforce-eager`, remove quantization, increase
@@ -233,6 +239,7 @@ On the production box: remove `--enforce-eager`, remove quantization, increase
 - [ ] Update `api_base` URLs in `litellm_config.yaml`
 - [ ] Change `apiBase` in `~/.continue/config.yaml` to production box IP
 - [ ] Use Qwen2.5-VL-72B for pdf-vision instead of 2B
+- [ ] Test Gemma 4 26B/31B for agent mode on production box
 
 ---
 
@@ -249,6 +256,9 @@ On the production box: remove `--enforce-eager`, remove quantization, increase
 | `context_window_fallback_dict` does nothing | Points fallback to same model | No-op — real fix is increasing max-model-len |
 | `uv not found` after install | PATH not updated | `source $HOME/.local/bin/env` |
 | All containers show healthy but API fails | LiteLLM still running migrations | Wait ~30s after startup for prisma migrate to finish |
+| vLLM healthcheck fails on startup | Model load takes longer than start_period | Bump `start_period` to 300s for large models, or run `docker compose up -d litellm open-webui` manually after vLLM is up |
+| Gemma 4 fails with `gemma4 architecture not recognized` | vLLM image too old | Use `vllm/vllm-openai:gemma4` image, not `latest` |
+| Continue agent mode: `--enable-auto-tool-choice` error | Tool calling not enabled in vLLM | Add `--enable-auto-tool-choice --tool-call-parser gemma4` to vLLM command |
 
 ---
 
@@ -327,10 +337,48 @@ On the production box: remove `--enforce-eager`, remove quantization, increase
 
 ---
 
+### 2026-04-14 — Gemma 4 Evaluation
+
+**Goal:** Evaluate Google's new Gemma 4 models, particularly for agentic programming with Continue.dev.
+
+**Background:**
+- Gemma 4 released April 2, 2026 under Apache 2.0 license
+- Built from Gemini 3 research — significant generational leap over Gemma 3
+- Benchmark highlights: AIME 2026 31B scores 89.2% (vs Gemma 3 27B at 20.8%), LiveCodeBench 80%, τ2-bench (agentic tool use) 86.4%
+- Four sizes: E2B, E4B (edge), 26B MoE (A4B), 31B Dense
+- All models have native function calling, reasoning/thinking mode, multimodal support
+- Requires `vllm/vllm-openai:gemma4` Docker image (not `latest`) — needs transformers>=5.5.0
+
+**What we did:**
+- Added `gemma4` entry to `switch-model.sh` pointing at `google/gemma-4-E4B-it`
+- Hit immediate crash with `latest` vLLM image — architecture `gemma4` not recognized
+- Switched to `vllm/vllm-openai:gemma4` Docker image — loaded successfully
+- E4B ran at ~0.1 tokens/s — completely unusable for testing
+- Tried E2B — still too slow on the 3070 Ti
+- Root cause: Gemma 4 requires the Triton attention backend (due to heterogeneous head dimensions) which is significantly slower than FlashAttention on consumer GPUs
+- No quantized versions of Gemma 4 exist yet (no AWQ/GGUF from Google) — running raw FP16
+- Agent mode requires `--enable-auto-tool-choice --tool-call-parser gemma4 --reasoning-parser gemma4` flags
+- Isolated Gemma 4 work to a separate git branch (`gemma-4-testing`) for others to evaluate
+
+**What we learned:**
+- Gemma 4 is a genuinely impressive model family but the 3070 Ti is not the right hardware for it
+- The Triton attention backend requirement is a hard constraint — not a config issue
+- E4B is an "effective 4B" model using Per-Layer Embeddings — architecturally clever but still slow without quantization
+- The benchmarks that matter for agentic use are for the 26B/31B models, not the E4B
+- Production box (DGX Spark, 128GB) is the right place to properly evaluate Gemma 4 — likely 26B MoE which runs at ~4B active parameter speed
+- vLLM has dedicated release images for new model families (`:gemma4`, not `:latest`) — check for these when models fail to load
+
+**Gemma 4 on production box (future):**
+- Use `google/gemma-4-26B-A4B-it` (MoE, only 4B active parameters — fast inference)
+- Or `google/gemma-4-31B-it` for maximum quality
+- Add `--enable-auto-tool-choice --tool-call-parser gemma4 --reasoning-parser gemma4` to vLLM command
+- Use `vllm/vllm-openai:gemma4` image
+- Expected to handle Agent mode in Continue.dev reliably
+
+---
+
 ## Next Steps
 
+- [ ] Set up per-developer virtual API keys via LiteLLM admin UI
+- [ ] Evaluate Agent mode on production box with Gemma 4 26B or 31B
 - [ ] Add retry logic to `pdf_pipeline.py` for JSON parse failures
-- [ ] Connect PDF pipeline to actual ACOS server
-- [ ] Connect PDF pipeline output to a database
-- [ ] Generate developer virtual keys via LiteLLM admin UI
-- [ ] Evaluate Agent mode on production box with 32B+ model
